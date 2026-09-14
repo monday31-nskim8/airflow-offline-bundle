@@ -1,0 +1,70 @@
+# 기존 airflow.decorators 대신 최신 표준인 airflow.sdk를 사용합니다.
+from airflow.sdk import dag, task
+from airflow.providers.amazon.aws.hooks.s3 import S3Hook
+from airflow.providers.postgres.hooks.postgres import PostgresHook
+from airflow.models import Variable
+from datetime import datetime, timedelta
+import requests
+import tempfile
+import os
+
+def sla_alert_callback(dag, task_list, blocking_task_list, slas, blocking_tis):
+    print(f"🚨 [SLA 경고] 목표 시간 내 완료 실패: {task_list}")
+
+default_args = {
+    'owner': 'data_team',
+    'sla_miss_callback': sla_alert_callback
+}
+
+@dag(
+    dag_id='kms_to_fos_master_pipeline_v3',
+    default_args=default_args,
+    # ⚠️ Airflow 3 문법: schedule_interval 대신 무조건 schedule을 사용합니다.
+    schedule='@daily', 
+    start_date=datetime(2026, 1, 1),
+    catchup=False
+)
+def kms_sync_pipeline():
+
+    @task
+    def get_target_documents():
+        return [{"doc_id": "DOC-001", "title": "보안 가이드", "author": "김철수"}]
+
+    @task(pool='kms_api_pool', execution_timeout=timedelta(minutes=10))
+    def transfer_to_fos(doc_info, logical_date):
+        doc_id = doc_info['doc_id']
+        api_token = Variable.get("kms_api_token")
+        fos_key = f"kms_docs/{logical_date}/{doc_id}.pdf"
+        tmp_path = ""
+
+        headers = {"Authorization": f"Bearer {api_token}"}
+        with requests.get(f"http://kms/api/{doc_id}", headers=headers, stream=True) as res:
+            res.raise_for_status()
+            with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+                for chunk in res.iter_content(chunk_size=8192):
+                    tmp_file.write(chunk)
+                tmp_path = tmp_file.name
+
+        try:
+            s3_hook = S3Hook(aws_conn_id='fos_s3_conn')
+            s3_hook.load_file(filename=tmp_path, key=fos_key, bucket_name="fos-archive", replace=True)
+            doc_info['fos_path'] = f"s3://fos-archive/{fos_key}"
+        finally:
+            if os.path.exists(tmp_path): os.remove(tmp_path)
+
+        return doc_info
+
+    @task(sla=timedelta(hours=1))
+    def save_metadata_to_db(doc_info):
+        pg_hook = PostgresHook(postgres_conn_id='my_postgres_conn')
+        upsert_sql = """
+        INSERT INTO kms_metadata (doc_id, title, fos_path) VALUES (%s, %s, %s)
+        ON CONFLICT (doc_id) DO UPDATE SET title = EXCLUDED.title, fos_path = EXCLUDED.fos_path;
+        """
+        pg_hook.run(upsert_sql, parameters=(doc_info['doc_id'], doc_info['title'], doc_info['fos_path']))
+
+    target_docs = get_target_documents()
+    uploaded_docs = transfer_to_fos.partial(logical_date="{{ ds_nodash }}").expand(doc_info=target_docs)
+    save_metadata_to_db.expand(doc_info=uploaded_docs)
+
+kms_sync_pipeline()
