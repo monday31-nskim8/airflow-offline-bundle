@@ -1,5 +1,5 @@
 # dags/slack_alert_dag.py
-from airflow.decorators import dag, task
+from airflow.sdk import dag, task
 from datetime import datetime
 
 # 방금 만든 공통 모듈에서 함수를 불러옵니다.
@@ -14,7 +14,7 @@ default_args = {
 @dag(
     dag_id='slack_alert_com_test_pipeline',
     default_args=default_args,
-    schedule_interval=None,
+    schedule=None,
     start_date=datetime(2024, 1, 1),
     catchup=False,
     tags=['study', 'alert']

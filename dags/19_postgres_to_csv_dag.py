@@ -1,15 +1,15 @@
-from airflow.decorators import dag, task
+from airflow.sdk import dag, task
 from airflow.providers.postgres.hooks.postgres import PostgresHook
-from datetime import datetime
+from datetime import datetime   
 import csv
 import os
 
 @dag(
     dag_id='postgres_to_csv_export',
-    schedule_interval='@daily', # 매일 자정(00:00)에 자동 실행되도록 설정
+    schedule='@daily', # 매일 자정(00:00)에 자동 실행되도록 설정
     start_date=datetime(2024, 1, 1),
     catchup=False,
-    tags=['study', 'export']
+    tags=['study', 'export', 'postgres']
 )
 def my_csv_export_pipeline():
 

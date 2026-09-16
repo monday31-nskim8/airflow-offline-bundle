@@ -1,6 +1,6 @@
-from airflow.decorators import dag, task
-from airflow.providers.amazon.aws.hooks.s3 import S3Hook
+from airflow.sdk import dag, task
 from airflow.models import Variable
+from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 from datetime import datetime
 import requests
 import tempfile
@@ -8,7 +8,7 @@ import os
 
 @dag(
     dag_id='kms_to_fos_pipeline',
-    schedule_interval='@daily',
+    schedule='@daily',
     start_date=datetime(2024, 1, 1),
     catchup=False,
     tags=['project', 'kms', 'fos', 'study']

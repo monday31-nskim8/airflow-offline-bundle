@@ -1,21 +1,22 @@
-from airflow.decorators import dag, task
-from airflow.providers.elasticsearch.hooks.elasticsearch import ElasticsearchHook
+from airflow.sdk import dag, task
+# from airflow.providers.elasticsearch.hooks.elasticsearch import ElasticsearchHook
+from airflow.providers.elasticsearch.hooks.elasticsearch import ElasticsearchSQLHook
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from datetime import datetime
 
 @dag(
     dag_id='es_to_postgres_etl',
-    schedule_interval='@daily',
+    schedule='@daily',
     start_date=datetime(2024, 1, 1),
     catchup=False,
-    tags=['study', 'etl']
+    tags=['study', 'elasticsearch', 'etl', 'postgres']
 )
 def es_to_pg_pipeline():
 
     # [Extract & Transform] 1. ES에서 데이터 집계하기
     @task
     def extract_aggregated_data():
-        es_hook = ElasticsearchHook(elasticsearch_conn_id='my_elastic_conn')
+        es_hook = ElasticsearchSQLHook(elasticsearch_conn_id='my_elastic_conn')
         es_client = es_hook.get_conn().es
 
         query = {

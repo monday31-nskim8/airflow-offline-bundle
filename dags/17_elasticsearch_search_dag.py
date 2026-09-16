@@ -1,11 +1,18 @@
-from airflow.decorators import dag, task
-from airflow.providers.elasticsearch.hooks.elasticsearch import ElasticsearchHook
+from airflow.sdk import dag, task
+# from airflow.providers.elasticsearch.hooks.elasticsearch import ElasticsearchHook
+
+# 일반적인 커넥션 및 SQL 래퍼 기반 객체를 가져올 때
+from airflow.providers.elasticsearch.hooks.elasticsearch import ElasticsearchSQLHook
+
+# 또는 순수 파이썬 네이티브 클라이언트를 직접 가져오고 싶을 때
+# from airflow.providers.elasticsearch.hooks.elasticsearch import ElasticsearchPythonHook
+
 from datetime import datetime
 import json
 
 @dag(
     dag_id='elasticsearch_aggregation_test',
-    schedule_interval=None,
+    schedule=None,
     start_date=datetime(2024, 1, 1),
     catchup=False,
     tags=['study', 'elasticsearch']
@@ -15,8 +22,8 @@ def my_elastic_search_pipeline():
     @task
     def fetch_and_aggregate():
         # 1. ES 커넥션 맺기
-        hook = ElasticsearchHook(elasticsearch_conn_id='my_elastic_conn')
-        es_client = hook.get_conn().es
+        es_hook = ElasticsearchSQLHook(elasticsearch_conn_id='my_elastic_conn')
+        es_client = es_hook.get_conn().es
 
         # 2. ES Query DSL 작성 (event_type 필드 기준 그룹화)
         # 💡 핵심: size를 0으로 주면 원본 데이터는 가져오지 않고 통계 결과만 빠르게 반환받습니다.

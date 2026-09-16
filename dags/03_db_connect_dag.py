@@ -1,10 +1,10 @@
-from airflow.decorators import dag, task
+from airflow.sdk import dag, task
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from datetime import datetime
 
 @dag(
     dag_id='postgres_query_test',
-    schedule_interval=None, # 수동으로만 실행하도록 설정
+    schedule=None, # 수동으로만 실행하도록 설정
     start_date=datetime(2024, 1, 1),
     catchup=False,
     tags=['study', 'database']

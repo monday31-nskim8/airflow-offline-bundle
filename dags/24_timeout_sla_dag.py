@@ -1,4 +1,4 @@
-from airflow.decorators import dag, task
+from airflow.sdk import dag, task
 from datetime import datetime, timedelta
 import time
 
@@ -19,7 +19,7 @@ default_args = {
     default_args=default_args,
     # schedule_interval='@daily',
     # 매 2분마다 자동으로 스케줄러가 실행하도록 설정
-    schedule_interval=timedelta(minutes=2),
+    schedule=timedelta(minutes=2),
     start_date=datetime(2026, 9, 9), # 오늘 날짜로 맞춤
     catchup=False,
     tags=['study', 'timeout', 'sla']

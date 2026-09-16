@@ -1,4 +1,4 @@
-from airflow.decorators import dag, task
+from airflow.sdk import dag, task
 from airflow.providers.slack.hooks.slack_webhook import SlackWebhookHook
 from datetime import datetime
 
@@ -35,7 +35,7 @@ default_args = {
 @dag(
     dag_id='slack_alert_test_pipeline',
     default_args=default_args,
-    schedule_interval=None,
+    schedule=None,
     start_date=datetime(2024, 1, 1),
     catchup=False,
     tags=['study', 'alert']

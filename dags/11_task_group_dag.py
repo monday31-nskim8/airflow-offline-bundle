@@ -1,9 +1,9 @@
-from airflow.decorators import dag, task, task_group
+from airflow.sdk import dag, task, task_group
 from datetime import datetime
 
 @dag(
     dag_id='task_group_tutorial_pipeline',
-    schedule_interval=None,
+    schedule=None,
     start_date=datetime(2024, 1, 1),
     catchup=False,
     tags=['study', 'task_group']

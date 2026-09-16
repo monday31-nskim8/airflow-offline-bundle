@@ -1,10 +1,10 @@
-from airflow.decorators import dag, task
+from airflow.sdk import dag, task
 from datetime import datetime
 import time
 
 @dag(
     dag_id='pool_control_tutorial',
-    schedule_interval=None,
+    schedule=None,
     start_date=datetime(2024, 1, 1),
     catchup=False,
     tags=['pool', 'study']

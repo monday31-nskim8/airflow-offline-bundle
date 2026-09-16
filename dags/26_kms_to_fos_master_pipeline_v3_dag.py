@@ -1,8 +1,8 @@
 # 기존 airflow.decorators 대신 최신 표준인 airflow.sdk를 사용합니다.
 from airflow.sdk import dag, task
+from airflow.models import Variable
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 from airflow.providers.postgres.hooks.postgres import PostgresHook
-from airflow.models import Variable
 from datetime import datetime, timedelta
 import requests
 import tempfile
@@ -22,7 +22,8 @@ default_args = {
     # ⚠️ Airflow 3 문법: schedule_interval 대신 무조건 schedule을 사용합니다.
     schedule='@daily', 
     start_date=datetime(2026, 1, 1),
-    catchup=False
+    catchup=False,
+    tags=['sample', 'project', 'kms', 'master', 'study']
 )
 def kms_sync_pipeline():
 
@@ -31,10 +32,10 @@ def kms_sync_pipeline():
         return [{"doc_id": "DOC-001", "title": "보안 가이드", "author": "김철수"}]
 
     @task(pool='kms_api_pool', execution_timeout=timedelta(minutes=10))
-    def transfer_to_fos(doc_info, logical_date):
+    def transfer_to_fos(doc_info, target_date):
         doc_id = doc_info['doc_id']
         api_token = Variable.get("kms_api_token")
-        fos_key = f"kms_docs/{logical_date}/{doc_id}.pdf"
+        fos_key = f"kms_docs/{target_date}/{doc_id}.pdf"
         tmp_path = ""
 
         headers = {"Authorization": f"Bearer {api_token}"}
@@ -64,7 +65,7 @@ def kms_sync_pipeline():
         pg_hook.run(upsert_sql, parameters=(doc_info['doc_id'], doc_info['title'], doc_info['fos_path']))
 
     target_docs = get_target_documents()
-    uploaded_docs = transfer_to_fos.partial(logical_date="{{ ds_nodash }}").expand(doc_info=target_docs)
+    uploaded_docs = transfer_to_fos.partial(target_date="{{ ds_nodash }}").expand(doc_info=target_docs)
     save_metadata_to_db.expand(doc_info=uploaded_docs)
 
 kms_sync_pipeline()

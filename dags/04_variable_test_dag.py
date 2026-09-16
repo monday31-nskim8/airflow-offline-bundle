@@ -1,11 +1,17 @@
-from airflow.decorators import dag, task
+from airflow.sdk import dag, task
 from airflow.models import Variable
-from airflow.operators.bash import BashOperator
+# from airflow.models import Variable
+# from airflow.operators.bash import BashOperator
+from airflow.providers.standard.operators.bash import BashOperator
 from datetime import datetime
+
+# 아래처럼 DAG의 껍데기(전역 공간)에 Variable.get()을 적으면 절대 안 됩니다.
+# ❌ 나쁜 예시 (절대 금지)
+# api_key = Variable.get("my_secret_api_key")  # <--- 스케줄러를 마비시키는 주범
 
 @dag(
     dag_id='variable_test_pipeline',
-    schedule_interval=None,
+    schedule=None,
     start_date=datetime(2024, 1, 1),
     catchup=False,
     tags=['study', 'variable']

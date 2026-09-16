@@ -1,10 +1,10 @@
-from airflow.decorators import dag, task
+from airflow.sdk import dag, task
 from datetime import datetime
 import random
 
 @dag(
     dag_id='branching_tutorial_pipeline',
-    schedule_interval=None,
+    schedule=None,
     start_date=datetime(2024, 1, 1),
     catchup=False,
     tags=['study', 'branching']
@@ -42,12 +42,15 @@ def my_branching_pipeline():
         print("마무리: 요일에 맞는 작업을 완료하고 파이프라인을 종료합니다.")
 
     # 5. 흐름 연결하기 (리스트 [ ] 를 사용해 분기 경로를 지정합니다)
-    branching_decision = choose_path()
-    weekend_path = do_weekend_work()
-    weekday_path = do_weekday_work()
-    summary = final_summary()
+    # branching_decision = choose_path()
+    # weekend_path = do_weekend_work()
+    # weekday_path = do_weekday_work()
+    # summary = final_summary()
 
     # choose_path의 결과에 따라 weekend 또는 weekday 중 하나로 흐름이 나뉘고, 마지막에 합쳐짐
-    branching_decision >> [weekend_path, weekday_path] >> summary
+    # branching_decision >> [weekend_path, weekday_path] >> summary 
+
+    # ⚠️ Airflow 3 문법
+    choose_path() >> [do_weekend_work(), do_weekday_work()] >> final_summary() 
 
 my_branching_pipeline()

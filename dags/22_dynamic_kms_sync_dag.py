@@ -1,9 +1,9 @@
-from airflow.decorators import dag, task
+from airflow.sdk import dag, task
 from datetime import datetime
 
 @dag(
     dag_id='dynamic_kms_to_fos_pipeline',
-    schedule_interval='@daily',
+    schedule='@daily',
     start_date=datetime(2024, 1, 1),
     catchup=False,
     tags=['project', 'dynamic_mapping', 'study']

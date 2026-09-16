@@ -1,9 +1,9 @@
-from airflow.decorators import dag, task
+from airflow.sdk import dag, task
 from datetime import datetime
 
 @dag(
     dag_id='dynamic_task_mapping_tutorial',
-    schedule_interval=None,
+    schedule=None,
     start_date=datetime(2024, 1, 1),
     catchup=False,
     tags=['study', 'dynamic_mapping']

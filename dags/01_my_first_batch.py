@@ -1,6 +1,8 @@
 from airflow import DAG
-from airflow.operators.bash import BashOperator
-from airflow.operators.python import PythonOperator
+# from airflow.operators.bash import BashOperator
+# from airflow.operators.python import PythonOperator
+from airflow.providers.standard.operators.bash import BashOperator
+from airflow.providers.standard.operators.python import PythonOperator
 from datetime import datetime, timedelta
 
 # 파이썬으로 실행할 가상의 데이터 처리 로직

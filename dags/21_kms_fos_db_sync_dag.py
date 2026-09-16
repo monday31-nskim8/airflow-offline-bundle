@@ -1,4 +1,4 @@
-from airflow.decorators import dag, task
+from airflow.sdk import dag, task
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from datetime import datetime
@@ -8,7 +8,7 @@ import os
 
 @dag(
     dag_id='kms_to_fos_and_db_pipeline',
-    schedule_interval='@daily',
+    schedule='@daily',
     start_date=datetime(2024, 1, 1),
     catchup=False,
     tags=['project', 'kms', 'fos', 'db', 'study']
@@ -92,3 +92,9 @@ def my_kms_sync_pipeline():
     save_metadata_to_pg(document_metadata)
 
 my_kms_sync_pipeline()
+
+# 터미널에서 아래 명령어로 파이프라인을 테스트합니다.
+# docker compose exec airflow-scheduler airflow dags test kms_to_fos_and_db_pipeline 2026-09-08
+
+# 이후 PostgreSQL 터미널에 접속하여 데이터를 확인해 봅니다.
+# docker compose exec postgres psql -U airflow -d airflow -c "SELECT doc_id, title, fos_path FROM kms_document_metadata;"

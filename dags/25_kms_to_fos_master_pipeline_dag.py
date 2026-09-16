@@ -1,7 +1,7 @@
-from airflow.decorators import dag, task
+from airflow.sdk import dag, task
+from airflow.models import Variable
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 from airflow.providers.postgres.hooks.postgres import PostgresHook
-from airflow.models import Variable
 from datetime import datetime, timedelta
 import requests
 import tempfile
@@ -20,10 +20,10 @@ default_args = {
 @dag(
     dag_id='kms_to_fos_master_pipeline',
     default_args=default_args,
-    schedule_interval='@daily',
+    schedule='@daily',
     start_date=datetime(2024, 1, 1),
     catchup=False,
-    tags=['project', 'kms', 'master', 'study']
+    tags=['sample', 'project', 'kms', 'master', 'study']
 )
 def kms_sync_pipeline():
 
@@ -40,13 +40,13 @@ def kms_sync_pipeline():
     # execution_timeout: 10분 내에 안 끝나면 강제 종료
     # pool: 동시에 5개까지만 실행되도록 제어
     @task(pool='kms_api_pool', execution_timeout=timedelta(minutes=10))
-    def transfer_to_fos(doc_info, logical_date):
+    def transfer_to_fos(doc_info, target_date):
         doc_id = doc_info['doc_id']
         kms_url = f"http://kms.company.com/api/docs/{doc_id}/download"
         api_token = Variable.get("kms_api_token")
         
         fos_bucket = "fos-archive"
-        fos_key = f"kms_docs/{logical_date}/{doc_id}.pdf"
+        fos_key = f"kms_docs/{target_date}/{doc_id}.pdf"
 
         # 1. 스트리밍 다운로드 (청크 단위로 임시 파일 기록)
         headers = {"Authorization": f"Bearer {api_token}"}
@@ -93,8 +93,12 @@ def kms_sync_pipeline():
     target_docs = get_target_documents()
     
     # 1개의 리스트를 N개의 병렬 FOS 업로드 태스크로 확장 (run_date는 고정 변수로 주입)
-    uploaded_docs = transfer_to_fos.partial(logical_date="{{ ds_nodash }}").expand(doc_info=target_docs)
+    # 🚨 partial에 예약어(logical_date)를 억지로 넣으려다 에러 발생
+    # uploaded_docs = transfer_to_fos.partial(logical_date="{{ ds_nodash }}").expand(doc_info=target_docs)
     
+    # ✅ 시스템 예약어가 아니므로 partial()이 템플릿 변수를 정상적으로 넘겨줍니다!
+    uploaded_docs = transfer_to_fos.partial(target_date="{{ ds_nodash }}").expand(doc_info=target_docs)
+
     # FOS 업로드가 끝난 N개의 결과를 다시 N개의 병렬 DB 적재 태스크로 확장
     save_metadata_to_db.expand(doc_info=uploaded_docs)
 

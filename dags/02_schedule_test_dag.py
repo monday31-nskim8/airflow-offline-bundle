@@ -1,5 +1,6 @@
 import pendulum
-from airflow.decorators import dag, task
+# from airflow.sdk import dag, task
+from airflow.sdk import dag, task
 
 # 한국 시간대(KST) 객체 생성
 kst = pendulum.timezone("Asia/Seoul")

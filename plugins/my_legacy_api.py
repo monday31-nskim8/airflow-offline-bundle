@@ -1,5 +1,6 @@
 # plugins/my_legacy_api.py
-from airflow.models.baseoperator import BaseOperator
+# from airflow.models.baseoperator import BaseOperator
+from airflow.sdk.bases.operator import BaseOperator
 import json
 
 class LegacySystemOperator(BaseOperator):

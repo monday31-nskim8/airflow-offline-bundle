@@ -1,23 +1,25 @@
-from airflow import DAG
+from airflow.sdk import dag, task
 from airflow.providers.docker.operators.docker import DockerOperator
 from datetime import datetime
 
-with DAG(
+@dag(
     dag_id='docker_operator_tutorial',
-    schedule_interval=None,
-    start_date=datetime(2024, 1, 1),
+    schedule=None,
+    start_date=datetime(2026, 9, 1),
     catchup=False,
-    tags=['study', 'docker']
-) as dag:
+    tags=['tutorial', 'docker', 'airflow3']
+)
+def docker_operator_pipeline():
 
+    # DockerOperator는 @task 데코레이터 대신 클래스 객체 형태로 직접 호출합니다.
     # 독립된 Python 3.9 컨테이너를 띄워서 실행하는 태스크
     run_isolated_python = DockerOperator(
         task_id='run_python_3_9',
-        # 1. 사용할 대상 이미지 (로컬에 로드되어 있어야 함)
+        # 1. 사용할 대상 이미지 (로컬에 로드되어 있어야 함) # 오프라인 환경이라면 호스트에 이 이미지가 미리 pull 되어 있어야 합니다.
         image='python:3.9-slim',
-        
+
         # 2. 컨테이너 안에서 실행할 명령어
-        command='python -c "import sys; print(f\'✅ 격리된 컨테이너의 파이썬 버전: {sys.version}\')"',
+        command='echo "✅ Docker 내부에서 독립된 Python 컨테이너가 성공적으로 실행되었습니다!" && python --version',
         
         # 3. Airflow 컨테이너가 호스트 PC의 Docker 엔진과 통신하기 위한 주소 (필수)
         docker_url='unix://var/run/docker.sock',
@@ -33,3 +35,7 @@ with DAG(
     )
 
     run_isolated_python
+
+docker_operator_pipeline()
+
+# docker compose exec airflow-scheduler airflow tasks test docker_operator_tutorial run_python_3_9 2026-09-15

@@ -1,5 +1,5 @@
 from airflow import Dataset
-from airflow.decorators import dag, task
+from airflow.sdk import dag, task
 from datetime import datetime
 
 # 1. Dataset 정의 (식별자 역할)
@@ -12,7 +12,7 @@ my_target_dataset = Dataset("file://opt/airflow/dags/data/result.csv")
 # ==========================================
 @dag(
     dag_id='A_producer_pipeline',
-    schedule_interval=None, # 수동 실행
+    schedule=None, # 수동 실행
     start_date=datetime(2024, 1, 1),
     catchup=False,
     tags=['study', 'dataset_producer']
